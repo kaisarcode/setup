@@ -27,7 +27,7 @@ install_sunshine_pkg() {
     local DEB_URL="https://github.com/LizardByte/Sunshine/releases/latest/download/sunshine-debian-trixie-amd64.deb"
     
     curl -L --output /tmp/sunshine.deb "$DEB_URL"
-    sudo dpkg -i /tmp/sunshine.deb || sudo apt-get install -y -f
+    sudo dpkg -i /tmp/sunshine.deb || sudo apt install -y -f
     rm /tmp/sunshine.deb
 }
 

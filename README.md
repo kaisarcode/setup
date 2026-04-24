@@ -17,7 +17,7 @@ To install the project on a new machine and start the setup:
 ```bash
 # 1. As root, install sudo and add your user to the group
 su -
-apt-get update && apt-get install -y sudo git
+apt update && apt install -y sudo git
 usermod -aG sudo <your_user>
 exit
 

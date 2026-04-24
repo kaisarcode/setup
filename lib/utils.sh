@@ -61,7 +61,7 @@ apt_install() {
 
     log_info "Installing $package..."
     export DEBIAN_FRONTEND=noninteractive
-    if sudo apt-get install -y -qq "$package"; then
+    if sudo apt install -y "$package"; then
         log_success "$package installed"
         return 0
     fi

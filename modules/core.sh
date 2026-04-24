@@ -26,7 +26,7 @@ deb http://security.debian.org/debian-security $os_name-security main contrib no
 deb http://deb.debian.org/debian/ $os_name-updates main contrib non-free non-free-firmware
 EOF
 
-    sudo apt-get update -qq
+    sudo apt update -qq
 }
 
 # Install core system packages.

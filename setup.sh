@@ -17,8 +17,8 @@ log_bootstrap() {
 
 # 1. Basic environment preparation
 log_bootstrap "Updating apt and installing basic tools (git, sudo, curl)..."
-apt-get update -qq
-apt-get install -y -qq git curl sudo
+apt update -qq
+apt install -y -qq git curl sudo
 
 # 2. Clone or update the setup-debian repository
 REPO_DIR="${SETUP_DEBIAN_DIR:-$HOME/setup-debian}"

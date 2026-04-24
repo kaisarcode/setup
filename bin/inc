@@ -121,7 +121,7 @@ EOF"
     incus exec "$NAME" -- chmod 440 /etc/sudoers.d/$PRIMARY_USER
     
     log_info "Installing packages (SSH, Avahi/mDNS)..."
-    incus exec "$NAME" -- sh -c "apt-get update -qq && apt-get install -y -qq avahi-daemon openssh-server"
+    incus exec "$NAME" -- sh -c "apt update -qq && apt install -y -qq avahi-daemon openssh-server"
 
     log_info "Enabling SSH password authentication..."
     incus exec "$NAME" -- sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
