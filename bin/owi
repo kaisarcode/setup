@@ -1,0 +1,186 @@
+#!/bin/bash
+# owi - Open WebUI runner for remote Ollama
+# Summary: Starts and manages Open WebUI against a remote Ollama server.
+# Author:  KaisarCode
+# Website: https://kaisarcode.com
+# License: https://www.gnu.org/licenses/gpl-3.0.html
+
+set -e
+
+# Print command usage.
+# @return 0 on success.
+owi_help() {
+    echo "Usage: owi <command>"
+    echo
+    echo "Commands:"
+    echo "  start    Start Open WebUI"
+    echo "  stop     Stop Open WebUI"
+    echo "  logs     Follow container logs"
+    echo "  status   Show container status"
+    echo "  url      Print local URL"
+    echo "  remove   Remove container and persistent data"
+    echo "  nuke     Remove container, persistent data, and local image"
+    echo
+    echo "Environment:"
+    echo "  OLLAMA_URL   Ollama base URL"
+    echo "               Default: own host Ollama on port 11434"
+}
+
+# Run podman with rootless preference and nested-container fallback.
+# @param $@ Podman arguments.
+# @return 0 on success.
+owi_podman() {
+    local err_log
+    local subcmd
+
+    if [ "$(id -u)" -ne 0 ] && command -v podman >/dev/null 2>&1; then
+        err_log=$(mktemp)
+        if podman "$@" 2>"$err_log"; then
+            rm -f "$err_log"
+            return 0
+        fi
+        if ! grep -qE "Permission denied|cannot clone|OCI permission denied|gid_map" "$err_log"; then
+            cat "$err_log" >&2
+        fi
+        rm -f "$err_log"
+    fi
+
+    if [ -d /dev/incus ] || [ -d /dev/lxd ]; then
+        subcmd="$1"
+        shift
+        if [ "$subcmd" = "run" ]; then
+            sudo podman run --userns=host "$@"
+        else
+            sudo podman "$subcmd" "$@"
+        fi
+        return
+    fi
+
+    sudo podman "$@"
+}
+
+# Resolve the Ollama base URL.
+# @return URL on stdout.
+resolve_ollama_url() {
+    local resolved_ip
+
+    if [ -n "${OLLAMA_URL:-}" ]; then
+        printf '%s\n' "$OLLAMA_URL"
+        return 0
+    fi
+
+    if [ -n "${HOST_OLL:-}" ]; then
+        resolved_ip=$(getent ahosts "$HOST_OLL" 2>/dev/null | awk '{ print $1 }' | head -n 1)
+        if [ -z "$resolved_ip" ]; then
+            resolved_ip=$(getent ahosts "${HOST_OLL%%.*}" 2>/dev/null | awk '{ print $1 }' | head -n 1)
+        fi
+        if [ -n "$resolved_ip" ]; then
+            printf 'http://%s:11434\n' "$resolved_ip"
+            return 0
+        fi
+    fi
+
+    printf '%s\n' "http://host.containers.internal:11434"
+}
+
+# Start Open WebUI.
+# @return 0 on success.
+owi_start() {
+    local data_dir
+    local image
+    local name
+    local ollama_url
+    local port
+
+    name="open-webui"
+    image="ghcr.io/open-webui/open-webui:main"
+    port="3000"
+    data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/open-webui"
+    ollama_url=$(resolve_ollama_url)
+
+    mkdir -p "$data_dir"
+    owi_podman rm -f "$name" >/dev/null 2>&1 || true
+    owi_podman run --rm -d \
+        --name "$name" \
+        -p "${port}:8080" \
+        -e WEBUI_AUTH=false \
+        -e WEBUI_SECRET_KEY="${WEBUI_SECRET_KEY:-kaisarcode-secret}" \
+        -e ENABLE_OPENAI_API="${ENABLE_OPENAI_API:-False}" \
+        -e OLLAMA_BASE_URL="$ollama_url" \
+        -v "${data_dir}:/app/backend/data" \
+        "$image"
+}
+
+# Stop Open WebUI.
+# @return 0 on success.
+owi_stop() {
+    owi_podman rm -f open-webui >/dev/null 2>&1 || true
+}
+
+# Follow Open WebUI logs.
+# @return 0 on success.
+owi_logs() {
+    owi_podman logs -f open-webui
+}
+
+# Print Open WebUI container status.
+# @return 0 on success.
+owi_status() {
+    owi_podman ps -a --filter "name=open-webui"
+}
+
+# Print the local Open WebUI URL.
+# @return 0 on success.
+owi_url() {
+    printf "%s\n" "http://localhost:3000"
+}
+
+# Remove Open WebUI runtime data.
+# @return 0 on success.
+owi_remove() {
+    owi_stop
+    rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/open-webui"
+}
+
+# Remove Open WebUI runtime data and image.
+# @return 0 on success.
+owi_nuke() {
+    owi_stop
+    rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/open-webui"
+    owi_podman rmi ghcr.io/open-webui/open-webui:main >/dev/null 2>&1 || true
+}
+
+# Run the selected command.
+# @param $@ Command arguments.
+# @return 0 on success, 1 on invalid command.
+owi_main() {
+    case "${1:-}" in
+        start)
+            owi_start
+            ;;
+        stop)
+            owi_stop
+            ;;
+        logs)
+            owi_logs
+            ;;
+        status)
+            owi_status
+            ;;
+        url)
+            owi_url
+            ;;
+        remove|reset)
+            owi_remove
+            ;;
+        nuke)
+            owi_nuke
+            ;;
+        *)
+            owi_help >&2
+            return 1
+            ;;
+    esac
+}
+
+owi_main "$@"

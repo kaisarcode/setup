@@ -1,0 +1,66 @@
+#!/bin/bash
+# xres - Toggle MATE font DPI mode
+# Summary: Switches MATE between normal and tablet-friendly font DPI values.
+# Author:  KaisarCode
+# Website: https://kaisarcode.com
+# License: https://www.gnu.org/licenses/gpl-3.0.html
+
+set -e
+
+SCALE_NORMAL="96.0"
+SCALE_TABLET="110.0"
+STATUS_FILE="/tmp/xres_mode"
+
+# Apply one MATE font DPI value.
+# @param $1 DPI value.
+# @return 0 on success.
+apply_scale() {
+    local dpi
+
+    dpi="$1"
+
+    gsettings set org.mate.font-rendering dpi "$dpi" 2>/dev/null || true
+    gsettings set org.mate.interface window-scaling-factor 1 2>/dev/null || true
+}
+
+# Return the current display mode.
+# @return Current mode on stdout.
+get_display_mode() {
+    [ -f "$STATUS_FILE" ] || {
+        printf '%s\n' "normal"
+        return 0
+    }
+
+    cat "$STATUS_FILE"
+}
+
+# Switch to tablet display mode.
+# @return 0 on success.
+enable_tablet_mode() {
+    apply_scale "$SCALE_TABLET"
+    printf '%s\n' "tablet" > "$STATUS_FILE"
+    printf 'TABLET MODE ACTIVATED: High DPI (%s)\n' "$SCALE_TABLET"
+}
+
+# Switch to normal display mode.
+# @return 0 on success.
+enable_normal_mode() {
+    apply_scale "$SCALE_NORMAL"
+    printf '%s\n' "normal" > "$STATUS_FILE"
+    printf 'NORMAL MODE ACTIVATED: Standard DPI (%s)\n' "$SCALE_NORMAL"
+}
+
+# Toggle display mode.
+# @return 0 on success.
+main() {
+    case "$(get_display_mode)" in
+        normal)
+            enable_tablet_mode
+            ;;
+        *)
+            enable_normal_mode
+            ;;
+    esac
+}
+
+main "$@"
