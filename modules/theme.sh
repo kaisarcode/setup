@@ -13,6 +13,7 @@ install_yaru() {
     apt_install "yaru-theme-gtk"
     apt_install "yaru-theme-icon"
     apt_install "yaru-theme-sound"
+    apt_install "papirus-icon-theme"
 }
 
 # Apply Yaru-dark theme to MATE.
