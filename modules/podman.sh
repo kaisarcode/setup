@@ -11,6 +11,7 @@ set -euo pipefail
 install_podman() {
     log_info "Installing Podman and rootless dependencies..."
     apt_install "podman"
+    apt_install "distrobox"
     apt_install "uidmap"
     apt_install "slirp4netns"
     apt_install "fuse-overlayfs"

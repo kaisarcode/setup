@@ -1,0 +1,79 @@
+#!/bin/bash
+# iso - Isolation manager for Dev Environment (VS Code & Antigravity)
+# Summary: Manages Distrobox containers with custom homes to keep $HOME clean.
+# Author:  KaisarCode
+# Website: https://kaisarcode.com
+# License: https://www.gnu.org/licenses/gpl-3.0.html
+
+set -e
+
+ISO_NAME="dev-env"
+ISO_IMAGE="debian:trixie"
+ISO_HOME="$HOME/.isolated/dev"
+
+# Print usage.
+iso_help() {
+    echo "Usage: iso <command>"
+    echo
+    echo "Commands:"
+    echo "  create   Create the isolated environment"
+    echo "  enter    Enter the isolated terminal"
+    echo "  code     Run VS Code inside the environment"
+    echo "  destroy  Remove the environment and its home"
+    echo
+}
+
+# Create the isolated environment.
+iso_create() {
+    echo "[INFO] Creating isolated home at $ISO_HOME..."
+    mkdir -p "$ISO_HOME"
+
+    echo "[INFO] Creating Distrobox container '$ISO_NAME'..."
+    distrobox create --name "$ISO_NAME" --image "$ISO_IMAGE" --home "$ISO_HOME" --yes
+
+    echo "[INFO] Provisioning environment..."
+    # Install VS Code inside the container
+    distrobox enter "$ISO_NAME" -- sudo apt update
+    distrobox enter "$ISO_NAME" -- sudo apt install -y curl gpg wget
+    
+    echo "[OK] Environment '$ISO_NAME' is ready."
+}
+
+# Run VS Code inside the environment.
+iso_code() {
+    if ! distrobox list | grep -q "$ISO_NAME"; then
+        echo "[ERROR] Environment not found. Run 'iso create' first."
+        return 1
+    fi
+    
+    # Check if code is installed inside
+    if ! distrobox enter "$ISO_NAME" -- command -v code >/dev/null 2>&1; then
+        echo "[INFO] Installing VS Code inside the environment..."
+        distrobox enter "$ISO_NAME" -- bash -c "wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg && sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg && sudo sh -c 'echo \"deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main\" > /etc/apt/sources.list.d/vscode.list' && rm -f packages.microsoft.gpg && sudo apt update && sudo apt install -y code"
+    fi
+
+    echo "[INFO] Launching VS Code..."
+    distrobox enter "$ISO_NAME" -- code .
+}
+
+# Enter the isolated terminal.
+iso_enter() {
+    distrobox enter "$ISO_NAME"
+}
+
+# Destroy the environment.
+iso_destroy() {
+    echo "[WARN] Destroying container and its isolated home..."
+    distrobox rm "$ISO_NAME" --force
+    rm -rf "$ISO_HOME"
+    echo "[OK] Cleaned up."
+}
+
+# Dispatcher.
+case "${1:-}" in
+    create)  iso_create ;;
+    enter)   iso_enter ;;
+    code)    iso_code ;;
+    destroy) iso_destroy ;;
+    *)       iso_help ;;
+esac

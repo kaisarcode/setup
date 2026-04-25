@@ -26,6 +26,7 @@ main() {
     source "$PROJECT_ROOT/modules/apps.sh"
     source "$PROJECT_ROOT/modules/theme.sh"
     source "$PROJECT_ROOT/modules/wine.sh"
+    source "$PROJECT_ROOT/modules/flatpak.sh"
 
     log_success "DESKTOP profile installation complete."
 }
