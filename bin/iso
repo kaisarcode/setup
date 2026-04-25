@@ -1,79 +1,97 @@
 #!/bin/bash
-# iso - Isolation manager for Dev Environment (VS Code & Antigravity)
-# Summary: Manages Distrobox containers with custom homes to keep $HOME clean.
+# iso - Generic Isolation Manager using Distrobox
+# Summary: Manages isolated environments with segregated homes.
 # Author:  KaisarCode
 # Website: https://kaisarcode.com
 # License: https://www.gnu.org/licenses/gpl-3.0.html
 
 set -e
 
-ISO_NAME="dev-env"
-ISO_IMAGE="debian:trixie"
-ISO_HOME="$HOME/.isolated/dev"
+ISO_BASE_DIR="$HOME/.isolated"
+ISO_DEFAULT_IMAGE="debian:trixie"
 
 # Print usage.
 iso_help() {
-    echo "Usage: iso <command>"
+    echo "Usage: iso <command> [name] [args...]"
     echo
     echo "Commands:"
-    echo "  create   Create the isolated environment"
-    echo "  enter    Enter the isolated terminal"
-    echo "  code     Run VS Code inside the environment"
-    echo "  destroy  Remove the environment and its home"
+    echo "  create <name> [image]  Create an isolated environment"
+    echo "  enter <name>           Enter the environment terminal"
+    echo "  run <name> <cmd>       Run a command inside the environment"
+    echo "  list                   List isolated environments"
+    echo "  destroy <name>         Remove the environment and its home"
     echo
 }
 
-# Create the isolated environment.
+# Create an environment.
 iso_create() {
-    echo "[INFO] Creating isolated home at $ISO_HOME..."
-    mkdir -p "$ISO_HOME"
+    local name="${1:-}"
+    local image="${2:-$ISO_DEFAULT_IMAGE}"
+    local home_dir="$ISO_BASE_DIR/$name"
 
-    echo "[INFO] Creating Distrobox container '$ISO_NAME'..."
-    distrobox create --name "$ISO_NAME" --image "$ISO_IMAGE" --home "$ISO_HOME" --yes
-
-    echo "[INFO] Provisioning environment..."
-    # Install VS Code inside the container
-    distrobox enter "$ISO_NAME" -- sudo apt update
-    distrobox enter "$ISO_NAME" -- sudo apt install -y curl gpg wget
-    
-    echo "[OK] Environment '$ISO_NAME' is ready."
-}
-
-# Run VS Code inside the environment.
-iso_code() {
-    if ! distrobox list | grep -q "$ISO_NAME"; then
-        echo "[ERROR] Environment not found. Run 'iso create' first."
+    if [ -z "$name" ]; then
+        echo "[ERROR] Name is required."
         return 1
     fi
-    
-    # Check if code is installed inside
-    if ! distrobox enter "$ISO_NAME" -- command -v code >/dev/null 2>&1; then
-        echo "[INFO] Installing VS Code inside the environment..."
-        distrobox enter "$ISO_NAME" -- bash -c "wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg && sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg && sudo sh -c 'echo \"deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main\" > /etc/apt/sources.list.d/vscode.list' && rm -f packages.microsoft.gpg && sudo apt update && sudo apt install -y code"
+
+    echo "[INFO] Creating isolated home at $home_dir..."
+    mkdir -p "$home_dir"
+
+    echo "[INFO] Creating Distrobox container '$name' using $image..."
+    distrobox create --name "$name" --image "$image" --home "$home_dir" --yes
+    echo "[OK] Environment '$name' created. Use 'iso enter $name' to start."
+}
+
+# Enter an environment.
+iso_enter() {
+    local name="${1:-}"
+    if [ -z "$name" ]; then
+        echo "[ERROR] Name is required."
+        return 1
+    fi
+    distrobox enter "$name"
+}
+
+# Run a command inside.
+iso_run() {
+    local name="${1:-}"
+    shift
+    if [ -z "$name" ]; then
+        echo "[ERROR] Name is required."
+        return 1
+    fi
+    distrobox enter "$name" -- "$@"
+}
+
+# List environments.
+iso_list() {
+    distrobox list
+}
+
+# Destroy an environment.
+iso_destroy() {
+    local name="${1:-}"
+    local home_dir="$ISO_BASE_DIR/$name"
+
+    if [ -z "$name" ]; then
+        echo "[ERROR] Name is required."
+        return 1
     fi
 
-    echo "[INFO] Launching VS Code..."
-    distrobox enter "$ISO_NAME" -- code .
-}
-
-# Enter the isolated terminal.
-iso_enter() {
-    distrobox enter "$ISO_NAME"
-}
-
-# Destroy the environment.
-iso_destroy() {
-    echo "[WARN] Destroying container and its isolated home..."
-    distrobox rm "$ISO_NAME" --force
-    rm -rf "$ISO_HOME"
+    echo "[WARN] Destroying environment '$name' and its home..."
+    distrobox rm "$name" --force
+    if [ -d "$home_dir" ]; then
+        rm -rf "$home_dir"
+    fi
     echo "[OK] Cleaned up."
 }
 
 # Dispatcher.
 case "${1:-}" in
-    create)  iso_create ;;
-    enter)   iso_enter ;;
-    code)    iso_code ;;
-    destroy) iso_destroy ;;
+    create)  shift; iso_create "$@" ;;
+    enter)   shift; iso_enter "$@" ;;
+    run)     shift; iso_run "$@" ;;
+    list)    iso_list ;;
+    destroy) shift; iso_destroy "$@" ;;
     *)       iso_help ;;
 esac
