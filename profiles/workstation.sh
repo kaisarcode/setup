@@ -7,18 +7,6 @@
 
 set -euo pipefail
 
-# Enable autologin in LightDM for the primary user.
-enable_autologin() {
-    local primary_user
-    primary_user=$(id -un 1000)
-    
-    if [ -f /etc/lightdm/lightdm.conf ]; then
-        log_info "Enabling autologin for $primary_user..."
-        sudo sed -i "s/^#autologin-user=.*/autologin-user=$primary_user/" /etc/lightdm/lightdm.conf
-        sudo sed -i "s/^#autologin-user-timeout=.*/autologin-user-timeout=0/" /etc/lightdm/lightdm.conf
-    fi
-}
-
 # Run the workstation provisioning profile.
 main() {
     local PROJECT_ROOT
@@ -37,7 +25,7 @@ main() {
 
     # 3. Workstation Specific (Sunshine + Autologin)
     source "$PROJECT_ROOT/modules/sunshine.sh"
-    enable_autologin
+    source "$PROJECT_ROOT/modules/autologin.sh"
 
     log_success "WORKSTATION profile installation complete."
 }
