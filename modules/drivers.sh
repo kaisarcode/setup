@@ -38,6 +38,19 @@ install_nvidia() {
     log_info "Enabling NVIDIA DRM modeset..."
     echo "options nvidia-drm modeset=1" | sudo tee /etc/modprobe.d/nvidia-drm.conf
     sudo update-initramfs -u
+
+    # Install NVIDIA Container Toolkit for Podman/Docker GPU support
+    log_info "Installing NVIDIA Container Toolkit..."
+    curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+    curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+        sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+        sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+    
+    sudo apt update
+    apt_install "nvidia-container-toolkit"
+    
+    log_info "Configuring NVIDIA CDI for Podman..."
+    sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
 }
 
 # Install PipeWire audio stack.
