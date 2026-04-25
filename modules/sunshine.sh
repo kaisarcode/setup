@@ -22,7 +22,11 @@ install_sunshine() {
     sudo apt install -y /tmp/sunshine.deb || sudo apt install -y -f
     rm /tmp/sunshine.deb
 
-    # Add udev rules for input simulation
+    # Add uinput module to load at boot
+    echo "uinput" | sudo tee /etc/modules-load.d/uinput.conf
+    sudo modprobe uinput
+
+    # Add udev rules for input simulation (Mouse/Keyboard/Gamepad)
     sudo bash -c 'cat <<EOF > /etc/udev/rules.d/60-sunshine.rules
 KERNEL=="uinput", GROUP="input", MODE="0660"
 EOF'
@@ -53,12 +57,9 @@ configure_sunshine() {
 # Sunshine Optimized Config
 encoder = nvenc
 nvenc_preset = p4
-nvenc_tune = lowlatency
-nvenc_rate_control = cbr
 min_threads = 4
 port = 47989
 fec_percentage = 20
-capture = nvenc
 max_bitrate = 50000
 EOF"
 }
