@@ -13,12 +13,11 @@ aid_help() {
     echo "Usage: aid <command> [args]"
     echo
     echo "Commands:"
+    echo "  install   Install the Aider image"
     echo "  run       Run Aider in the current directory"
-    echo "  pull      Pull the Aider image"
     echo "  status    Show local image status"
     echo "  remove    Remove local persistent data"
     echo "  nuke      Remove local persistent data and local image"
-    echo "  help      Show this help"
     echo
     echo "Environment:"
     echo "  OLLAMA_URL    Ollama server URL"
@@ -179,11 +178,11 @@ aid_main() {
     shift 2>/dev/null || true
 
     case "$command" in
+        install)
+            aid_pull
+            ;;
         run)
             aid_run "$@"
-            ;;
-        pull)
-            aid_pull
             ;;
         status)
             aid_status
@@ -193,9 +192,6 @@ aid_main() {
             ;;
         nuke)
             aid_nuke
-            ;;
-        help|"")
-            aid_help
             ;;
         *)
             aid_help >&2
