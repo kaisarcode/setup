@@ -12,16 +12,17 @@ install_mate_desktop() {
     log_info "Installing MATE Desktop environment..."
     apt_install "mate-desktop-environment"
     apt_install "mate-tweak"
+    apt_install "mate-menu"
     apt_install "lightdm"
     apt_install "lightdm-gtk-greeter"
-    
+
     # Standard GUI tools
     apt_install "network-manager-gnome"
     apt_install "mate-terminal"
     apt_install "pluma"
     apt_install "engrampa"
     apt_install "caja"
-    
+
     # Caja Extensions
     log_info "Installing Caja extensions..."
     apt_install "caja-open-terminal"
