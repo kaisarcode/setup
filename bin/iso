@@ -5,10 +5,10 @@
 # Website: https://kaisarcode.com
 # License: https://www.gnu.org/licenses/gpl-3.0.html
 
-set -e
+set -euo pipefail
 
-ISO_BASE_DIR="$HOME/.isolated"
-ISO_DEFAULT_IMAGE="debian:trixie"
+ISO_BASE_DIR="${ISO_BASE_DIR:-$HOME/.isolated}"
+ISO_DEFAULT_IMAGE="${ISO_DEFAULT_IMAGE:-debian:trixie}"
 
 # Print usage.
 iso_help() {
@@ -19,19 +19,40 @@ iso_help() {
     echo "  enter <name>           Enter the environment terminal"
     echo "  run <name> <cmd>       Run a command inside the environment"
     echo "  export <name> <app>    Export an app to the host desktop menu"
-    echo "  list                   List isolated environments"
+    echo "  list                   List distrobox environments"
     echo "  remove <name>          Remove the environment and its home"
     echo
+}
+
+# Validate an environment name.
+iso_require_name() {
+    local name="${1:-}"
+
+    if [ -z "$name" ]; then
+        echo "[ERROR] Name is required." >&2
+        return 1
+    fi
+
+    case "$name" in
+        *[!a-zA-Z0-9._-]*)
+            echo "[ERROR] Invalid name: $name" >&2
+            return 1
+            ;;
+    esac
 }
 
 # Create an environment.
 iso_create() {
     local name="${1:-}"
     local image="${2:-$ISO_DEFAULT_IMAGE}"
-    local home_dir="$ISO_BASE_DIR/$name"
+    local home_dir=""
 
-    if [ -z "$name" ]; then
-        echo "[ERROR] Name is required."
+    iso_require_name "$name"
+
+    home_dir="$ISO_BASE_DIR/$name"
+
+    if distrobox list | awk '{print $3}' | grep -qx "$name"; then
+        echo "[ERROR] Environment already exists: $name" >&2
         return 1
     fi
 
@@ -40,27 +61,33 @@ iso_create() {
 
     echo "[INFO] Creating Distrobox container '$name' using $image..."
     distrobox create --name "$name" --image "$image" --home "$home_dir" --yes
-    echo "[OK] Environment '$name' created. Use 'iso enter $name' to start."
+
+    echo "[OK] Environment '$name' created."
+    echo "[OK] Home: $home_dir"
 }
 
 # Enter an environment.
 iso_enter() {
     local name="${1:-}"
-    if [ -z "$name" ]; then
-        echo "[ERROR] Name is required."
-        return 1
-    fi
+
+    iso_require_name "$name"
+
     distrobox enter "$name"
 }
 
 # Run a command inside.
 iso_run() {
     local name="${1:-}"
+
+    iso_require_name "$name"
+
     shift
-    if [ -z "$name" ]; then
-        echo "[ERROR] Name is required."
+
+    if [ "$#" -eq 0 ]; then
+        echo "[ERROR] Command is required." >&2
         return 1
     fi
+
     distrobox enter "$name" -- "$@"
 }
 
@@ -68,11 +95,17 @@ iso_run() {
 iso_export() {
     local name="${1:-}"
     local app="${2:-}"
-    if [ -z "$name" ] || [ -z "$app" ]; then
-        echo "[ERROR] Name and App are required."
+
+    iso_require_name "$name"
+
+    if [ -z "$app" ]; then
+        echo "[ERROR] App is required." >&2
         return 1
     fi
+
+    echo "[WARN] Exporting writes desktop integration files to the host."
     echo "[INFO] Exporting '$app' from '$name' to host menu..."
+
     distrobox enter "$name" -- distrobox-export --app "$app"
 }
 
@@ -84,28 +117,66 @@ iso_list() {
 # Remove an environment.
 iso_remove() {
     local name="${1:-}"
-    local home_dir="$ISO_BASE_DIR/$name"
+    local home_dir=""
+    local answer=""
 
-    if [ -z "$name" ]; then
-        echo "[ERROR] Name is required."
-        return 1
+    iso_require_name "$name"
+
+    home_dir="$ISO_BASE_DIR/$name"
+
+    echo "[WARN] This will remove:"
+    echo "       Container: $name"
+    echo "       Home:      $home_dir"
+    echo
+    printf "Type '%s' to confirm: " "$name"
+    read -r answer
+
+    if [ "$answer" != "$name" ]; then
+        echo "[OK] Cancelled."
+        return 0
     fi
 
-    echo "[WARN] Removing environment '$name' and its home..."
     distrobox rm "$name" --force
+
     if [ -d "$home_dir" ]; then
         rm -rf "$home_dir"
     fi
-    echo "[OK] Cleaned up."
+
+    echo "[OK] Removed environment '$name'."
 }
 
 # Dispatcher.
 case "${1:-}" in
-    create)         shift; iso_create "$@" ;;
-    enter)          shift; iso_enter "$@" ;;
-    run)            shift; iso_run "$@" ;;
-    export)         shift; iso_export "$@" ;;
-    list)           iso_list ;;
-    remove|destroy) shift; iso_remove "$@" ;;
-    *)              iso_help ;;
+    create)
+        shift
+        iso_create "$@"
+        ;;
+    enter)
+        shift
+        iso_enter "$@"
+        ;;
+    run)
+        shift
+        iso_run "$@"
+        ;;
+    export)
+        shift
+        iso_export "$@"
+        ;;
+    list)
+        iso_list
+        ;;
+    remove|destroy)
+        shift
+        iso_remove "$@"
+        ;;
+    -h|--help|help|"")
+        iso_help
+        ;;
+    *)
+        echo "[ERROR] Unknown command: $1" >&2
+        echo >&2
+        iso_help
+        exit 1
+        ;;
 esac
