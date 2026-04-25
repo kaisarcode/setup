@@ -13,11 +13,13 @@ owi_help() {
     echo "Usage: owi <command>"
     echo
     echo "Commands:"
+    echo "  install  Install (pull) Open WebUI image"
     echo "  start    Start Open WebUI"
     echo "  stop     Stop Open WebUI"
     echo "  logs     Follow container logs"
     echo "  status   Show container status"
     echo "  url      Print local URL"
+    echo "  uninstall Remove container and persistent data"
     echo "  remove   Remove container and persistent data"
     echo "  nuke     Remove container, persistent data, and local image"
     echo
@@ -150,11 +152,29 @@ owi_nuke() {
     owi_podman rmi ghcr.io/open-webui/open-webui:main >/dev/null 2>&1 || true
 }
 
+# Install Open WebUI (pull image and create dirs).
+# @return 0 on success.
+owi_install() {
+    local data_dir
+    local image
+    image="ghcr.io/open-webui/open-webui:main"
+    data_dir="${XDG_DATA_HOME:-$HOME/.local/share}/open-webui"
+
+    echo "[INFO] Preparing Open WebUI installation..."
+    mkdir -p "$data_dir"
+    echo "[INFO] Pulling image: $image"
+    owi_podman pull "$image"
+    echo "[OK] Open WebUI is ready to start."
+}
+
 # Run the selected command.
 # @param $@ Command arguments.
 # @return 0 on success, 1 on invalid command.
 owi_main() {
     case "${1:-}" in
+        install)
+            owi_install
+            ;;
         start)
             owi_start
             ;;
@@ -170,7 +190,7 @@ owi_main() {
         url)
             owi_url
             ;;
-        remove|reset)
+        uninstall|remove|reset)
             owi_remove
             ;;
         nuke)
