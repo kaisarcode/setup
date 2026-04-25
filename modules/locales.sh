@@ -17,14 +17,13 @@ setup_locales() {
     sudo locale-gen
     
     # Set system-wide language to English
-    sudo localectl set-locale LANG=en_US.UTF-8
+    sudo update-locale LANG=en_US.UTF-8
     
-    # Force Latam keyboard layout (X11 and Console)
-    sudo localectl set-x11-keymap latam
-    sudo localectl set-keymap latam
+    # Force Latam keyboard layout (Direct file edit for persistence)
+    sudo sed -i 's/XKBLAYOUT=.*/XKBLAYOUT="latam"/' /etc/default/keyboard
     
-    # Set Time and Currency to Argentina (Optional, but keeps Buenos Aires logic)
-    sudo localectl set-locale LC_TIME=es_AR.UTF-8 LC_MONETARY=es_AR.UTF-8 LC_PAPER=es_AR.UTF-8
+    # Set Time and Currency to Argentina
+    sudo update-locale LC_TIME=es_AR.UTF-8 LC_MONETARY=es_AR.UTF-8 LC_PAPER=es_AR.UTF-8
 }
 
 # Rename XDG user directories to English.
