@@ -43,7 +43,8 @@ create_code_environment() {
 install_code_base_packages() {
     log_info "Installing base packages inside '$CODE_BOX_NAME'..."
     distrobox enter "$CODE_BOX_NAME" -- sudo apt update
-    distrobox enter "$CODE_BOX_NAME" -- sudo apt install -y curl wget gpg apt-transport-https ca-certificates
+    distrobox enter "$CODE_BOX_NAME" -- sudo apt install -y curl wget git gpg apt-transport-https ca-certificates
+    distrobox enter "$CODE_BOX_NAME" -- sudo apt install -y gnome-keyring libsecret-1-0 dbus-user-session
 }
 
 # Install VS Code inside the isolated environment.
