@@ -96,18 +96,6 @@ EOF"
     sudo loginctl enable-linger "$primary_user"
 }
 
-# Optional: Enable autologin in LightDM.
-enable_autologin() {
-    local primary_user
-    primary_user=$(id -un 1000)
-    
-    if [ -f /etc/lightdm/lightdm.conf ]; then
-        log_info "Enabling autologin for $primary_user..."
-        sudo sed -i "s/^#autologin-user=.*/autologin-user=$primary_user/" /etc/lightdm/lightdm.conf
-        sudo sed -i "s/^#autologin-user-timeout=.*/autologin-user-timeout=0/" /etc/lightdm/lightdm.conf
-    fi
-}
-
 # Run the sunshine provisioning.
 main() {
     local PROJECT_ROOT
@@ -119,7 +107,6 @@ main() {
     configure_permissions
     configure_sunshine
     setup_service
-    enable_autologin
     log_success "Sunshine is ready."
 }
 
