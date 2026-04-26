@@ -15,16 +15,34 @@ VOL_NAME="ollama_data"
 # Print command usage.
 # @return 0 on success.
 oll_help() {
-    echo "Usage: oll <command>"
+    echo "Usage: oll <command> [args...]"
     echo
     echo "Commands:"
     echo "  install  Install (pull) Ollama image"
     echo "  start    Start Ollama container with GPU support"
-    echo "  stop     Stop Ollama container"
+    echo "  stop     Stop Ollama container, or stop a model when args are given"
     echo "  logs     Follow container logs"
     echo "  status   Show container status"
     echo "  remove   Remove container and persistent models"
     echo "  nuke     Remove container, models, and local image"
+    echo "  shell    Open a shell inside the Ollama container"
+    echo "  exec     Run a raw command inside the Ollama container"
+    echo "  ollama   Run any Ollama CLI command inside the container"
+    echo
+    echo "Ollama commands:"
+    echo "  list     List installed models"
+    echo "  ps       List running models"
+    echo "  pull     Pull a model"
+    echo "  run      Run a model"
+    echo "  launch   Launch an Ollama app or artifact"
+    echo "  serve    Start Ollama server in the container foreground"
+    echo "  show     Show model information"
+    echo "  stop     Stop a running model when a model name is given"
+    echo "  push     Push a model"
+    echo "  rm       Remove a model"
+    echo "  cp       Copy a model"
+    echo "  create   Create a model from a Modelfile"
+    echo "  help     Show Ollama help"
     echo
 }
 
@@ -78,6 +96,26 @@ oll_status() {
     sudo podman ps -a --filter "name=${NAME}"
 }
 
+# Run a command inside the Ollama container.
+# @param $@ Command and arguments.
+# @return 0 on success.
+oll_exec() {
+    sudo podman exec -it "$NAME" "$@"
+}
+
+# Run an Ollama CLI command inside the container.
+# @param $@ Ollama command arguments.
+# @return 0 on success.
+oll_ollama() {
+    oll_exec ollama "$@"
+}
+
+# Open a shell inside the Ollama container.
+# @return 0 on success.
+oll_shell() {
+    oll_exec bash
+}
+
 # Remove the Ollama container and persistent volume.
 # @return 0 on success.
 oll_remove() {
@@ -99,11 +137,24 @@ oll_main() {
     case "${1:-}" in
         install) oll_install ;;
         start) oll_start ;;
-        stop) oll_stop ;;
+        stop)
+            shift
+            if [ "$#" -gt 0 ]; then
+                oll_ollama stop "$@"
+            else
+                oll_stop
+            fi
+            ;;
         logs) oll_logs ;;
         status) oll_status ;;
         remove) oll_remove ;;
         nuke) oll_nuke ;;
+        shell) oll_shell ;;
+        exec) shift; oll_exec "$@" ;;
+        ollama) shift; oll_ollama "$@" ;;
+        list|ps|pull|run|launch|serve|show|push|rm|cp|create|help)
+            oll_ollama "$@"
+            ;;
         *) oll_help >&2; return 1 ;;
     esac
 }
