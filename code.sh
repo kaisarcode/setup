@@ -50,6 +50,30 @@ install_code_base_packages() {
     distrobox enter "$CODE_BOX_NAME" -- sudo apt install -y gnome-keyring libsecret-1-0 dbus-user-session
 }
 
+# Configure environment variables for cross-compilation tools.
+# @return 0 on success.
+configure_code_env() {
+    log_info "Configuring environment variables inside '$CODE_BOX_NAME'..."
+    distrobox enter "$CODE_BOX_NAME" -- bash -c '
+set -euo pipefail
+
+PROFILE="$HOME/.profile"
+MARKER="# kc-crosstools"
+
+if grep -qF "$MARKER" "$PROFILE" 2>/dev/null; then
+    exit 0
+fi
+
+cat >> "$PROFILE" << '"'"'EOF'"'"'
+
+# kc-crosstools
+export ANDROID_HOME="${ANDROID_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/android-sdk}"
+export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/27.2.12479018"
+export PATH="$ANDROID_HOME/ndk/27.2.12479018:$PATH"
+EOF
+'
+}
+
 # Install cross-compilation toolchains inside the isolated environment.
 # @return 0 on success.
 install_code_cross_tools() {
@@ -63,23 +87,19 @@ install_code_cross_tools() {
     distrobox enter "$CODE_BOX_NAME" -- bash -c '
 set -euo pipefail
 
-NDK_ROOT="${KC_NDK_ROOT:-}"
-if [ -z "$NDK_ROOT" ] && [ -n "${KC_TOOLCHAINS:-}" ]; then
-    NDK_ROOT="$KC_TOOLCHAINS/ndk/android-ndk-r27c"
-fi
-if [ -z "$NDK_ROOT" ]; then
-    NDK_ROOT="$HOME/.local/share/kaisarcode/toolchains/ndk/android-ndk-r27c"
-fi
+ANDROID_HOME="${ANDROID_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/android-sdk}"
+NDK_DIR="$ANDROID_HOME/ndk/27.2.12479018"
 
-if [ -d "$NDK_ROOT" ]; then
+if [ -d "$NDK_DIR" ]; then
     exit 0
 fi
 
-mkdir -p "$(dirname "$NDK_ROOT")"
+mkdir -p "$ANDROID_HOME/ndk"
 TMP=$(mktemp -d)
 curl -fL "https://dl.google.com/android/repository/android-ndk-r27c-linux.zip" -o "$TMP/ndk.zip"
 unzip -q "$TMP/ndk.zip" -d "$TMP"
-mv "$TMP/android-ndk-r27c" "$NDK_ROOT"
+mv "$TMP/android-ndk-r27c" "$NDK_DIR"
+ln -sf "27.2.12479018" "$ANDROID_HOME/ndk/27"
 rm -rf "$TMP"
 '
 }
@@ -155,6 +175,7 @@ main() {
     create_code_environment
     install_code_base_packages
     install_code_cross_tools
+    configure_code_env
     install_vscode
     install_antigravity
     export_code_apps
