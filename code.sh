@@ -37,6 +37,10 @@ create_code_environment() {
     log_info "Creating isolated home at $CODE_BOX_HOME..."
     mkdir -p "$CODE_BOX_HOME"
 
+    log_info "Linking .ssh and .gitconfig from host..."
+    ln -sf "$HOME/.ssh" "$CODE_BOX_HOME/.ssh"
+    ln -sf "$HOME/.gitconfig" "$CODE_BOX_HOME/.gitconfig"
+
     log_info "Creating Distrobox environment '$CODE_BOX_NAME'..."
     distrobox create \
         --name "$CODE_BOX_NAME" \
@@ -50,8 +54,22 @@ create_code_environment() {
 install_code_base_packages() {
     log_info "Installing base packages inside '$CODE_BOX_NAME'..."
     distrobox enter "$CODE_BOX_NAME" -- sudo apt update
-    distrobox enter "$CODE_BOX_NAME" -- sudo apt install -y curl wget git gpg apt-transport-https ca-certificates
+    distrobox enter "$CODE_BOX_NAME" -- sudo apt install -y curl wget git git-lfs gpg apt-transport-https ca-certificates
     distrobox enter "$CODE_BOX_NAME" -- sudo apt install -y gnome-keyring libsecret-1-0 dbus-user-session
+    distrobox enter "$CODE_BOX_NAME" -- bash -c '
+set -euo pipefail
+
+if command -v gh >/dev/null 2>&1; then
+    exit 0
+fi
+
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+    | sudo tee /usr/share/keyrings/githubcli-archive-keyring.gpg >/dev/null
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+    | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+sudo apt update
+sudo apt install -y gh
+'
 }
 
 # Configure environment variables for cross-compilation tools.
