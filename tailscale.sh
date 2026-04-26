@@ -19,6 +19,25 @@ install_tailscale() {
     curl -fsSL https://tailscale.com/install.sh | sh
 }
 
+# Create the SSH config file required by the Tailscale VSCode extension inside the code container.
+# @return 0 on success.
+setup_ssh_config() {
+    local ssh_dir="$HOME/.isolated/code/.ssh"
+    local ssh_config="$ssh_dir/config"
+
+    if [[ -f "$ssh_config" ]]; then
+        log_skip "SSH config already exists."
+        return 0
+    fi
+
+    log_info "Creating SSH config for code container..."
+    mkdir -p "$ssh_dir"
+    chmod 700 "$ssh_dir"
+    touch "$ssh_config"
+    chmod 600 "$ssh_config"
+    log_success "SSH config created."
+}
+
 # Run the tailscale provisioning.
 # @return 0 on success.
 main() {
@@ -30,6 +49,7 @@ main() {
     install_tailscale
     sudo tailscale set --operator="$USER" --ssh
     sudo systemctl enable --now tailscaled
+    setup_ssh_config
     log_success "Tailscale installation complete. Run 'sudo tailscale up' to authenticate."
 }
 
