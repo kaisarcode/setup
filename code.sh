@@ -113,7 +113,7 @@ export_code_apps() {
 # @return 0 on success.
 main() {
     local PROJECT_ROOT
-    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     source "$PROJECT_ROOT/lib/utils.sh"
 
     log_info "Running Isolated Code Environment Provisioning..."

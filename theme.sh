@@ -22,9 +22,9 @@ install_yaru() {
 apply_mate_theme() {
     local primary_user
     primary_user=$(id -un 1000)
-    
+
     log_info "Applying Yaru-dark theme for $primary_user..."
-    
+
     sudo -u "$primary_user" dbus-launch gsettings set org.mate.interface gtk-theme 'Yaru-dark'
     sudo -u "$primary_user" dbus-launch gsettings set org.mate.interface icon-theme 'Yaru-dark'
     sudo -u "$primary_user" dbus-launch gsettings set org.mate.Marco.general theme 'Yaru-dark'
@@ -34,7 +34,7 @@ apply_mate_theme() {
 # @return 0 on success.
 main() {
     local PROJECT_ROOT
-    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     source "$PROJECT_ROOT/lib/utils.sh"
 
     log_info "Running Theme Provisioning..."

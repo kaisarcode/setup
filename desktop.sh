@@ -82,7 +82,7 @@ remove_ifupdown_wifi_config() {
 # @return 0 on success.
 main() {
     local PROJECT_ROOT
-    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     source "$PROJECT_ROOT/lib/utils.sh"
 
     log_info "Running Desktop Provisioning..."

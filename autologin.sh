@@ -12,7 +12,7 @@ set -euo pipefail
 enable_autologin() {
     local primary_user
     primary_user=$(id -un 1000)
-    
+
     if [ -f /etc/lightdm/lightdm.conf ]; then
         log_info "Enabling autologin for $primary_user..."
         sudo sed -i "s/^#autologin-user=.*/autologin-user=$primary_user/" /etc/lightdm/lightdm.conf
@@ -28,7 +28,7 @@ enable_autologin() {
 # @return 0 on success.
 main() {
     local PROJECT_ROOT
-    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     source "$PROJECT_ROOT/lib/utils.sh"
 
     log_info "Running Autologin Provisioning..."

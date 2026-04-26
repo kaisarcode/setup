@@ -20,7 +20,7 @@ install_flatpak_base() {
 # @return 0 on success.
 main() {
     local PROJECT_ROOT
-    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     source "$PROJECT_ROOT/lib/utils.sh"
     log_info "Running Flatpak Isolation Provisioning..."
     install_flatpak_base

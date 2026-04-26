@@ -23,7 +23,7 @@ install_podman() {
 configure_rootless() {
     local primary_user
     primary_user=$(id -un 1000 2>/dev/null || awk -F: '$3 == 1000 {print $1}' /etc/passwd)
-    
+
     if [ -n "$primary_user" ]; then
         log_info "Ensuring subuid/subgid configuration for '$primary_user'..."
         if ! grep -q "^$primary_user:" /etc/subuid; then
@@ -39,7 +39,7 @@ configure_rootless() {
 # @return 0 on success.
 main() {
     local PROJECT_ROOT
-    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     source "$PROJECT_ROOT/lib/utils.sh"
 
     log_info "Running Podman Provisioning..."

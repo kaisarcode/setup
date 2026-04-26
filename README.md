@@ -5,11 +5,11 @@ Modular and idempotent system for provisioning Debian 13 (Trixie) environments.
 ## Architecture
 
 1.  **Library (`lib/`)**: Shared logic and idempotency helpers (`apt_install`, `log_*`).
-2.  **Installers (`ins/`)**: Atomic provisioning units.
+2.  **Installers (`*.sh`)**: Root-level provisioning units that can be run independently.
 
 ## Quick Start (Bare Metal)
 
-To install the project on a new machine and start the setup:
+To prepare a new Debian 13 machine and start provisioning:
 
 ```bash
 # 1. As root, install sudo and add your user to the group
@@ -19,18 +19,37 @@ usermod -aG sudo <your_user>
 reboot
 
 # 2. Back as normal user, clone and run the setup
-git clone https://github.com/kaisarcode/setup-debian
+git clone https://github.com/kaisarcode/setup
+cd setup
+./core.sh
 ```
 
-## Helper Tools (`bin/`)
+## Installers
 
-Standalone utilities for system management:
+Each installer is an atomic provisioning unit:
 
-- **`inc <subcommand>`**: Unified manager for Incus containers (create, clone, sync, etc.).
-- **`aid`**: Runs Aider inside a Podman container.
-- **`owi`**: Starts Open WebUI against a remote Ollama server.
-- **`iso`**: Run an isolated envitonment using podman/distrobox.
-- **`xmouse` / `xres`**: Utilities for switching between normal and tablet-friendly mouse/DPI settings (useful for convertible devices).
+- **`core.sh`**: Configures Debian repositories, base packages, and core services.
+- **`drivers.sh`**: Installs CPU microcode, NVIDIA support, and PipeWire audio.
+- **`desktop.sh`**: Installs MATE, LightDM, desktop tools, and NetworkManager.
+- **`locales.sh`**: Configures English system locales and English XDG directories.
+- **`autologin.sh`**: Enables LightDM autologin for the primary user.
+- **`podman.sh`**: Installs Podman, Distrobox, and rootless container support.
+- **`code.sh`**: Creates an isolated Distrobox coding environment with VS Code and Antigravity.
+- **`incus.sh`**: Installs and initializes Incus.
+- **`flatpak.sh`**: Installs Flatpak and adds Flathub.
+- **`tailscale.sh`**: Installs Tailscale and enables its service.
+- **`sunshine.sh`**: Installs and configures Sunshine for game streaming.
+- **`theme.sh`**: Installs and applies the Yaru dark theme for MATE.
+- **`wine.sh`**: Installs Wine, i386 support, and Winetricks.
+
+Run only the installers needed for the target machine:
+
+```bash
+./core.sh
+./drivers.sh
+./desktop.sh
+./locales.sh
+```
 
 ---
 

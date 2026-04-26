@@ -29,7 +29,7 @@ install_nvidia() {
     log_info "NVIDIA GPU detected. Installing driver stack..."
     apt_install "dkms"
     apt_install "linux-headers-$(uname -r)"
-    
+
     apt_install "nvidia-driver"
     apt_install "firmware-misc-nonfree"
     apt_install "nvidia-settings"
@@ -44,10 +44,10 @@ install_nvidia() {
     curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
         sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
         sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
-    
+
     sudo apt update
     apt_install "nvidia-container-toolkit"
-    
+
     log_info "Configuring NVIDIA CDI for Podman..."
     sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
 }
@@ -73,7 +73,7 @@ install_audio() {
 # @return 0 on success.
 main() {
     local PROJECT_ROOT
-    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     source "$PROJECT_ROOT/lib/utils.sh"
 
     log_info "Running Drivers Provisioning..."

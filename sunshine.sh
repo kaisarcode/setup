@@ -17,7 +17,7 @@ install_sunshine() {
 
     log_info "Installing Sunshine..."
     local deb_url="https://github.com/LizardByte/Sunshine/releases/latest/download/sunshine-debian-trixie-amd64.deb"
-    
+
     curl -L --output /tmp/sunshine.deb "$deb_url"
     sudo apt install -y /tmp/sunshine.deb || sudo apt install -y -f
     rm /tmp/sunshine.deb
@@ -37,7 +37,7 @@ EOF'
 configure_permissions() {
     local primary_user
     primary_user=$(id -un 1000)
-    
+
     log_info "Configuring hardware permissions for $primary_user..."
     sudo usermod -aG video,render,input "$primary_user"
 }
@@ -52,7 +52,7 @@ configure_sunshine() {
 
     log_info "Creating optimized Sunshine configuration..."
     sudo -u "$primary_user" mkdir -p "$user_home/.config/sunshine"
-    
+
     sudo -u "$primary_user" bash -c "cat <<EOF > $user_home/.config/sunshine/sunshine.conf
 encoder = nvenc
 nvenc_preset = p4
@@ -75,7 +75,7 @@ setup_service() {
 
     log_info "Setting up Sunshine as a user service..."
     sudo -u "$primary_user" mkdir -p "$user_home/.config/systemd/user/"
-    
+
     sudo -u "$primary_user" bash -c "cat <<EOF > $user_home/.config/systemd/user/sunshine.service
 [Unit]
 Description=Sunshine Game Stream Host
@@ -102,7 +102,7 @@ EOF"
 # @return 0 on success.
 main() {
     local PROJECT_ROOT
-    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     source "$PROJECT_ROOT/lib/utils.sh"
 
     log_info "Running Sunshine Provisioning..."
