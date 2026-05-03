@@ -33,6 +33,7 @@ install_nvidia() {
     apt_install "nvidia-driver"
     apt_install "firmware-misc-nonfree"
     apt_install "nvidia-settings"
+    apt_install "nvidia-cuda-toolkit"
     apt_install "nvtop"
 
     log_info "Enabling NVIDIA DRM modeset..."
